@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>FRANZ Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent: #00ff88;
+            --accent-dim: #00aa55;
+            --error: #ff4444;
+            --warning: #ffaa00;
+            --border: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .config-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .config-label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .status-value.paused {
+            color: var(--error);
+        }
+
+        .status-value.running {
+            color: var(--accent);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.resume {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--bg-primary);
+        }
+
+        button.resume:active {
+            background: var(--accent);
+        }
+
+        button.pause {
+            background: var(--bg-tertiary);
+            border-color: var(--warning);
+        }
+
+        button.stop {
+            background: var(--bg-tertiary);
+            border-color: var(--error);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .story-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .story-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .story-title {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        input[type="checkbox"] {
+            width: 2.5rem;
+            height: 1.25rem;
+            appearance: none;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        input[type="checkbox"]:checked {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+        }
+
+        input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--text-primary);
+            top: 50%;
+            left: 0.125rem;
+            transform: translateY(-50%);
+            transition: left 0.2s;
+        }
+
+        input[type="checkbox"]:checked::before {
+            left: 1.25rem;
+        }
+
+        .story-content {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .story-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .story-content::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .story-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .story-content::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-dim);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .alert.error {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            display: block;
+        }
+
+        .alert.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .connection-status {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: var(--error);
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-status.connected {
+            background: var(--accent);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FRANZ Control</h1>
+        </header>
+
+        <div class="config-section">
+            <label class="config-label">FRANZ Server Address</label>
+            <input type="text" id="server-url" placeholder="http://192.168.1.100:8080" value="http://localhost:8080">
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="status-grid">
+            <div class="status-card">
+                <div class="status-label">Connection</div>
+                <div class="status-value" id="connection-status">
+                    <span class="connection-status" id="connection-indicator"></span>
+                    <span id="connection-text">UNKNOWN</span>
+                </div>
+            </div>
+            <div class="status-card">
+                <div class="status-label">Step</div>
+                <div class="status-value" id="step-value">---</div>
+            </div>
+            <div class="status-card">
+                <div class="status-label">Status</div>
+                <div class="status-value" id="status-value">---</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="resume" onclick="sendCommand('resume')" id="btn-resume">
+                ▶ Resume
+            </button>
+            <button class="pause" onclick="sendCommand('pause')" id="btn-pause">
+                ⏸ Pause
+            </button>
+            <button class="stop" onclick="sendCommand('stop')" id="btn-stop">
+                ⏹ Stop
+            </button>
+            <button onclick="fetchStatus()">
+                ↻ Refresh
+            </button>
+        </div>
+
+        <div class="story-section">
+            <div class="story-header">
+                <div class="story-title">Current Story</div>
+                <label class="auto-refresh-toggle">
+                    <input type="checkbox" id="auto-refresh" checked>
+                    <span>Auto</span>
+                </label>
+            </div>
+            <div class="story-content" id="story-content">Connecting...</div>
+        </div>
+
+        <div class="footer">
+            Last updated: <span id="last-update">Never</span>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            serverUrl: localStorage.getItem('franzServerUrl') || 'http://localhost:8080',
+            autoRefresh: true,
+            refreshInterval: null,
+            lastUpdate: null
+        };
+
+        const elements = {
+            serverUrl: document.getElementById('server-url'),
+            alert: document.getElementById('alert'),
+            connectionStatus: document.getElementById('connection-text'),
+            connectionIndicator: document.getElementById('connection-indicator'),
+            stepValue: document.getElementById('step-value'),
+            statusValue: document.getElementById('status-value'),
+            storyContent: document.getElementById('story-content'),
+            lastUpdate: document.getElementById('last-update'),
+            autoRefresh: document.getElementById('auto-refresh'),
+            btnResume: document.getElementById('btn-resume'),
+            btnPause: document.getElementById('btn-pause'),
+            btnStop: document.getElementById('btn-stop')
+        };
+
+        elements.serverUrl.value = state.serverUrl;
+
+        elements.serverUrl.addEventListener('change', (e) => {
+            state.serverUrl = e.target.value.trim().replace(/\/$/, '');
+            localStorage.setItem('franzServerUrl', state.serverUrl);
+            showAlert('Server address updated', 'success');
+            fetchStatus();
+        });
+
+        elements.autoRefresh.addEventListener('change', (e) => {
+            state.autoRefresh = e.checked;
+            if (state.autoRefresh) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        function showAlert(message, type = 'error') {
+            elements.alert.textContent = message;
+            elements.alert.className = `alert ${type}`;
+            setTimeout(() => {
+                elements.alert.className = 'alert';
+            }, 3000);
+        }
+
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                elements.connectionStatus.textContent = 'ONLINE';
+                elements.connectionIndicator.classList.add('connected');
+            } else {
+                elements.connectionStatus.textContent = 'OFFLINE';
+                elements.connectionIndicator.classList.remove('connected');
+            }
+        }
+
+        function updateLastUpdate() {
+            const now = new Date();
+            elements.lastUpdate.textContent = now.toLocaleTimeString();
+        }
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(state.serverUrl, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                updateConnectionStatus(true);
+                elements.stepValue.textContent = data.step || '0';
+                
+                if (data.paused) {
+                    elements.statusValue.textContent = 'PAUSED';
+                    elements.statusValue.className = 'status-value paused';
+                    elements.btnResume.disabled = false;
+                    elements.btnPause.disabled = true;
+                } else {
+                    elements.statusValue.textContent = 'RUNNING';
+                    elements.statusValue.className = 'status-value running';
+                    elements.btnResume.disabled = true;
+                    elements.btnPause.disabled = false;
+                }
+                
+                elements.storyContent.textContent = data.story || 'No story available';
+                updateLastUpdate();
+                
+            } catch (error) {
+                updateConnectionStatus(false);
+                elements.stepValue.textContent = '---';
+                elements.statusValue.textContent = '---';
+                elements.statusValue.className = 'status-value';
+                elements.storyContent.textContent = `Connection failed: ${error.message}`;
+                showAlert(`Fetch failed: ${error.message}`, 'error');
+                console.error('Fetch error:', error);
+            }
+        }
+
+        async function sendCommand(command) {
+            const button = document.getElementById(`btn-${command}`);
+            button.disabled = true;
+            
+            try {
+                const response = await fetch(`${state.serverUrl}/${command}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                showAlert(`Command '${command}' sent successfully`, 'success');
+                
+                setTimeout(() => fetchStatus(), 500);
+                
+            } catch (error) {
+                showAlert(`Failed to send '${command}': ${error.message}`, 'error');
+                console.error('Command error:', error);
+            } finally {
+                setTimeout(() => {
+                    button.disabled = false;
+                }, 1000);
+            }
+        }
+
+        function startAutoRefresh() {
+            if (state.refreshInterval) {
+                clearInterval(state.refreshInterval);
+            }
+            fetchStatus();
+            state.refreshInterval = setInterval(fetchStatus, 2000);
+        }
+
+        function stopAutoRefresh() {
+            if (state.refreshInterval) {
+                clearInterval(state.refreshInterval);
+                state.refreshInterval = null;
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else if (state.autoRefresh) {
+                startAutoRefresh();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+
+        if (state.autoRefresh) {
+            startAutoRefresh();
+        } else {
+            fetchStatus();
+        }
+    </script>
+</body>
+</html>
