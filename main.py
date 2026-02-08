@@ -21,6 +21,16 @@ from pathlib import Path
 from typing import Any
 
 
+# ctypes.wintypes does not always define ULONG_PTR (common on some Python builds).
+# Define it safely based on pointer size.
+try:
+    ULONG_PTR = w.ULONG_PTR  # type: ignore[attr-defined]
+except AttributeError:
+    ULONG_PTR = ctypes.c_uint64 if ctypes.sizeof(ctypes.c_void_p) == 8 else ctypes.c_uint32
+
+
+
+
 API_URL = "http://localhost:1234/v1/chat/completions"
 MODEL_NAME = "qwen3-vl-2b-instruct-1m"
 
@@ -209,7 +219,7 @@ class MOUSEINPUT(ctypes.Structure):
         ("mouseData", w.DWORD),
         ("dwFlags", w.DWORD),
         ("time", w.DWORD),
-        ("dwExtraInfo", w.ULONG_PTR),
+        ("dwExtraInfo", ULONG_PTR),
     ]
 
 
@@ -219,7 +229,7 @@ class KEYBDINPUT(ctypes.Structure):
         ("wScan", w.WORD),
         ("dwFlags", w.DWORD),
         ("time", w.DWORD),
-        ("dwExtraInfo", w.ULONG_PTR),
+        ("dwExtraInfo", ULONG_PTR),
     ]
 
 
